@@ -15,7 +15,7 @@ export default function Nav() {
         <div className="flex items-center gap-6">
           <Link
             href="/blog"
-            className="font-display text-[11px] tracking-[2px] uppercase text-muted hover:text-accent transition-colors duration-300"
+            className="font-display text-[11px] tracking-[2px] uppercase text-[#9898a8] hover:text-[#4af0c0] transition-colors duration-300"
           >
             Blog
           </Link>

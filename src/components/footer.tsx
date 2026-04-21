@@ -11,9 +11,9 @@ export default function Footer() {
           Tame<span className="text-accent">_</span>the
           <span className="text-accent">_</span>Machine
         </Link>
-        <p className="text-[13px] text-dim">
+        <p className="text-[13px] text-[#606070]">
           &copy; {new Date().getFullYear()} Tame the Machine AI Agency &middot; Healdsburg, CA &middot;{' '}
-          <Link href="/blog" className="text-dim no-underline hover:text-accent transition-colors duration-200">
+          <Link href="/blog" className="text-[#9898a8] no-underline hover:text-[#4af0c0] transition-colors duration-200">
             Blog
           </Link>
         </p>
