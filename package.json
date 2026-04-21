@@ -1,0 +1,13 @@
+{
+  "name": "tame-the-machine-site",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "gray-matter": "^4.0.3",
+    "marked": "^14.1.0"
+  }
+}
