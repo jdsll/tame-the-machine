@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Brand colors — use as: bg-accent, text-accent, text-muted, etc. */
+  --color-accent: #4af0c0;
+  --color-surface: #0a0a0f;
+  --color-surface-alt: #111118;
+  --color-card: #16161f;
+  --color-card-hover: #1c1c28;
+  --color-content: #e8e8ed;
+  --color-muted: #9898a8;
+  --color-dim: #606070;
+
+  /* Fonts — injected by next/font via CSS vars */
+  --font-body: var(--font-dm-sans, 'DM Sans', sans-serif);
+  --font-display: var(--font-space-mono, 'Space Mono', monospace);
+}
+
+:root {
+  /* CSS vars for rgba values not expressible in @theme */
+  --accent-dim: rgba(74, 240, 192, 0.12);
+  --accent-glow: rgba(74, 240, 192, 0.25);
+  --border: rgba(255, 255, 255, 0.06);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #0a0a0f;
+  color: #e8e8ed;
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prose dark theme for blog post bodies */
+.prose {
+  --tw-prose-body: #9898a8;
+  --tw-prose-headings: #e8e8ed;
+  --tw-prose-lead: #9898a8;
+  --tw-prose-links: #4af0c0;
+  --tw-prose-bold: #e8e8ed;
+  --tw-prose-counters: #606070;
+  --tw-prose-bullets: #4af0c0;
+  --tw-prose-hr: rgba(255, 255, 255, 0.06);
+  --tw-prose-quotes: #e8e8ed;
+  --tw-prose-quote-borders: #4af0c0;
+  --tw-prose-captions: #606070;
+  --tw-prose-code: #4af0c0;
+  --tw-prose-pre-code: #e8e8ed;
+  --tw-prose-pre-bg: #16161f;
+  --tw-prose-th-borders: rgba(255, 255, 255, 0.06);
+  --tw-prose-td-borders: rgba(255, 255, 255, 0.06);
+}
