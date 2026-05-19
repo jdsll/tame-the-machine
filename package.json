@@ -24,6 +24,9 @@
     "remark-gfm": "^4.0.0",
     "resend": "^4.0.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
     "@tailwindcss/typography": "^0.5.15",
