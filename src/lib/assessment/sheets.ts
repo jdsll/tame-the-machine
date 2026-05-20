@@ -31,7 +31,7 @@ export async function appendRow(sub: SheetSubmission): Promise<void> {
     }
   }
 
-  const sheetId = process.env.GOOGLE_SHEETS_ID ?? ''
+  const sheetId = (process.env.GOOGLE_SHEETS_ID ?? '').trim()
   if (!credentials.client_email || !credentials.private_key || !sheetId) {
     throw new Error(
       `[assessment] missing sheets credentials: email=${!!credentials.client_email} key=${!!credentials.private_key} sheetId=${!!sheetId}`,
