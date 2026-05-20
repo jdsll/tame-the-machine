@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Append to sheet
+  let sheetError: string | undefined
   try {
     await appendRow({
       answers,
@@ -136,6 +137,8 @@ export async function POST(req: NextRequest) {
     })
     sheetOk = true
   } catch (err) {
+    const e = err as { message?: string; code?: number }
+    sheetError = `${e.code ?? ''} ${e.message ?? String(err)}`.trim()
     console.error('[assessment] sheets append failed', err)
   }
 
@@ -144,5 +147,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'delivery_failed' })
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, sheetOk, sheetError })
 }
