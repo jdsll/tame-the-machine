@@ -10,12 +10,14 @@ export type SheetSubmission = {
 }
 
 export async function appendRow(sub: SheetSubmission): Promise<void> {
-  const privateKey = (process.env.GOOGLE_SHEETS_PRIVATE_KEY ?? '')
-    .trim()
-    .replace(/\\n/g, '\n')
-    .replace(/\r/g, '')
+  const saCreds = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+    ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
+    : null
+  const clientEmail = saCreds?.client_email ?? process.env.GOOGLE_SHEETS_CLIENT_EMAIL ?? ''
+  const privateKey = saCreds?.private_key ??
+    (process.env.GOOGLE_SHEETS_PRIVATE_KEY ?? '').trim().replace(/\\n/g, '\n').replace(/\r/g, '')
   const auth = new google.auth.JWT(
-    process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+    clientEmail,
     undefined,
     privateKey,
     ['https://www.googleapis.com/auth/spreadsheets'],
