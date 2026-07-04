@@ -9,7 +9,8 @@ import ResultDisplay from './result-display'
 
 // --- Types ---
 
-type MultiRankState = { selected: string[]; rank1: string | null }
+// Selection order is rank order: selected[0] is the top pick.
+type MultiRankState = { selected: string[] }
 
 type FormState = {
   step: number
@@ -24,11 +25,12 @@ type FormState = {
   firstName: string
   email: string
   hp: string
+  emailDelivered: boolean
 }
 
 // --- Constants ---
 
-const EMPTY_MULTI: MultiRankState = { selected: [], rank1: null }
+const EMPTY_MULTI: MultiRankState = { selected: [] }
 
 const DEFAULT_STATE: FormState = {
   step: 0,
@@ -43,9 +45,11 @@ const DEFAULT_STATE: FormState = {
   firstName: '',
   email: '',
   hp: '',
+  emailDelivered: true,
 }
 
-const STORAGE_KEY = 'aia:form:v1'
+// v2: MultiRankState dropped rank1 (rank is now selection order)
+const STORAGE_KEY = 'aia:form:v2'
 
 // --- Helpers ---
 
@@ -69,11 +73,7 @@ function toAnswers(s: FormState): AssessmentAnswers {
   type RankItem = { id: MultiId5; rank: 1 | 2 }
 
   function buildMulti(mr: MultiRankState): RankItem[] {
-    if (mr.selected.length === 0) return []
-    if (mr.selected.length === 1) return [{ id: mr.selected[0] as MultiId5, rank: 1 }]
-    const r1 = mr.rank1!
-    const r2 = mr.selected.find(x => x !== r1)!
-    return [{ id: r1 as MultiId5, rank: 1 }, { id: r2 as MultiId5, rank: 2 }]
+    return mr.selected.slice(0, 2).map((id, i) => ({ id: id as MultiId5, rank: (i + 1) as 1 | 2 }))
   }
 
   return {
@@ -94,43 +94,38 @@ function OptionButton({
   selected,
   onClick,
   children,
-  rankIndicator = null,
-  onRankClick,
+  rankBadge = null,
 }: {
   selected: boolean
   onClick: () => void
   children: React.ReactNode
-  rankIndicator?: 'empty' | 'filled' | null
-  onRankClick?: () => void
+  rankBadge?: 1 | 2 | null
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={selected}
       className={[
         'w-full text-left px-5 py-4 rounded-lg border transition-all duration-150 font-body text-[15px] leading-[1.6]',
-        rankIndicator ? 'flex items-center gap-3' : '',
+        rankBadge ? 'flex items-center gap-3' : '',
         selected
           ? 'border-accent bg-[var(--accent-dim)] text-content'
           : 'border-[var(--border)] bg-card hover:bg-card-hover text-content',
       ].join(' ')}
     >
-      {rankIndicator && (
+      {rankBadge && (
         <span
-          role="radio"
-          aria-checked={rankIndicator === 'filled'}
-          tabIndex={0}
-          onClick={(e) => { e.stopPropagation(); onRankClick?.() }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onRankClick?.() } }}
+          aria-hidden="true"
           className={[
-            'flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors duration-150 cursor-pointer',
-            rankIndicator === 'filled'
-              ? 'border-accent bg-accent'
-              : 'border-accent bg-transparent',
+            'flex-shrink-0 w-5 h-5 rounded-full border-2 border-accent flex items-center justify-center font-display text-[11px] font-bold leading-none',
+            rankBadge === 1 ? 'bg-accent text-surface' : 'bg-transparent text-accent',
           ].join(' ')}
-        />
+        >
+          {rankBadge}
+        </span>
       )}
-      <span className={rankIndicator ? 'flex-1' : ''}>{children}</span>
+      <span className={rankBadge ? 'flex-1' : ''}>{children}</span>
     </button>
   )
 }
@@ -143,12 +138,23 @@ export default function AssessmentForm() {
   const [blockMessage, setBlockMessage] = useState<string | null>(null)
   const [emailError, setEmailError] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState(false)
   const [result, setResult] = useState<AssessmentResult | null>(null)
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    setState(hydrateFromStorage())
+    const stored = hydrateFromStorage()
+    // Landing on the results step after a refresh: recompute the result from
+    // the stored answers so the page doesn't strand on the loading fallback.
+    if (stored.step === 9) {
+      try {
+        setResult(scoreAssessment(toAnswers(stored)))
+      } catch {
+        setState(DEFAULT_STATE)
+        setHydrated(true)
+        return
+      }
+    }
+    setState(stored)
     setHydrated(true)
   }, [])
 
@@ -181,37 +187,22 @@ export default function AssessmentForm() {
     setState(s => {
       const cur = s[qKey] as MultiRankState
       if (cur.selected.includes(id)) {
-        return {
-          ...s,
-          [qKey]: {
-            selected: cur.selected.filter(x => x !== id),
-            rank1: cur.rank1 === id ? null : cur.rank1,
-          },
-        }
+        return { ...s, [qKey]: { selected: cur.selected.filter(x => x !== id) } }
       }
       if (cur.selected.length >= 2) {
-        setBlockMessage("Pick your top 2 first — deselect one to swap.")
+        setBlockMessage("You've picked 2 — tap one to deselect, then choose another.")
         setTimeout(() => setBlockMessage(null), 3000)
         return s
       }
-      return { ...s, [qKey]: { selected: [...cur.selected, id], rank1: cur.rank1 } }
+      return { ...s, [qKey]: { selected: [...cur.selected, id] } }
     })
-  }
-
-  const handleRank = (qKey: 'q2' | 'q6', id: string) => {
-    setState(s => ({ ...s, [qKey]: { ...(s[qKey] as MultiRankState), rank1: id } }))
   }
 
   const canAdvance = (): boolean => {
     if (step === 8) return validateEmail(state.email)
-    if (step === 1) {
-      const { selected, rank1 } = state.q2
-      return selected.length === 2 && rank1 !== null
-    }
-    if (step === 5) {
-      const { selected, rank1 } = state.q6
-      return selected.length === 2 && rank1 !== null
-    }
+    // Multi-rank: at least 1 selection; rank comes from selection order.
+    if (step === 1) return state.q2.selected.length >= 1
+    if (step === 5) return state.q6.selected.length >= 1
     return true
   }
 
@@ -229,13 +220,14 @@ export default function AssessmentForm() {
     }
     if (submitting) return
     setSubmitting(true)
-    setSubmitError(false)
-    try { sessionStorage.removeItem(STORAGE_KEY) } catch {}
 
     const answers = toAnswers(state)
     const scored = scoreAssessment(answers)
     setResult(scored)
 
+    // The result is computed locally, so the user always gets their results —
+    // delivery failures just mean no emailed copy (shown as a banner).
+    let emailDelivered = false
     try {
       const res = await fetch('/api/submit-assessment', {
         method: 'POST',
@@ -249,17 +241,14 @@ export default function AssessmentForm() {
           _hp: state.hp,
         }),
       })
-      const data = await res.json() as { ok: boolean }
-      if (data.ok) {
-        setState(s => ({ ...s, step: 9 }))
-      } else {
-        setSubmitError(true)
-      }
+      const data = await res.json() as { ok: boolean; emailOk?: boolean }
+      emailDelivered = data.ok && data.emailOk !== false
     } catch {
-      setSubmitError(true)
+      emailDelivered = false
     } finally {
       setSubmitting(false)
     }
+    setState(s => ({ ...s, step: 9, emailDelivered }))
   }
 
   // --- Render ---
@@ -273,7 +262,12 @@ export default function AssessmentForm() {
         transition={{ duration: 0.4 }}
       >
         {result ? (
-          <ResultDisplay result={result} firstName={state.firstName} q8={state.q8 ?? 'A'} />
+          <ResultDisplay
+            result={result}
+            firstName={state.firstName}
+            q8={state.q8 ?? 'A'}
+            emailed={state.emailDelivered}
+          />
         ) : (
           <div className="text-center py-24 text-muted font-body">Loading your results...</div>
         )}
@@ -361,40 +355,18 @@ export default function AssessmentForm() {
                   return (
                     <>
                       <p className="text-muted text-[13px] font-body mb-3">
-                        Select up to 2 — you'll rank them after.
+                        Select up to 2 in order of impact — your first pick counts most.
                       </p>
-
-                      {/* Secondary hint — fades in when 2 are selected */}
-                      <AnimatePresence>
-                        {mrState.selected.length === 2 && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.2 }}
-                            className="mb-5 px-4 py-3 rounded-lg border border-accent bg-[var(--accent-dim)] shadow-sm"
-                          >
-                            <p className="font-display text-[11px] tracking-[2px] uppercase text-accent mb-1">
-                              One more step
-                            </p>
-                            <p className="font-body text-[14px] text-content leading-[1.5]">
-                              Which matters more? Tap the dot on your top pick.
-                            </p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
 
                       <div className="flex flex-col gap-3">
                         {question.options.map(opt => {
-                          const isSelected = mrState.selected.includes(opt.id)
-                          const showDot = mrState.selected.length === 2 && isSelected
+                          const rankIdx = mrState.selected.indexOf(opt.id)
                           return (
                             <OptionButton
                               key={opt.id}
-                              selected={isSelected}
+                              selected={rankIdx !== -1}
                               onClick={() => handleMultiToggle(qKey, opt.id)}
-                              rankIndicator={showDot ? (mrState.rank1 === opt.id ? 'filled' : 'empty') : null}
-                              onRankClick={() => handleRank(qKey, opt.id)}
+                              rankBadge={rankIdx === -1 ? null : ((rankIdx + 1) as 1 | 2)}
                             >
                               {opt.text}
                             </OptionButton>
@@ -457,6 +429,12 @@ export default function AssessmentForm() {
               exit={{ opacity: 0, x: -24 }}
               transition={{ duration: 0.25 }}
             >
+              <form
+                onSubmit={e => {
+                  e.preventDefault()
+                  handleSubmit()
+                }}
+              >
               <div className="bg-card border border-[var(--border)] rounded-xl p-8">
                 <h2 className="font-display text-[18px] font-bold text-content mb-2 leading-[1.4]">
                   Where should we send your results?
@@ -522,6 +500,10 @@ export default function AssessmentForm() {
                     )}
                   </div>
                 </div>
+
+                <p className="mt-5 text-[13px] font-body text-dim leading-[1.6]">
+                  One email with your full results — no spam, no drip sequence.
+                </p>
               </div>
 
               <div className="flex items-center justify-between mt-6">
@@ -533,22 +515,14 @@ export default function AssessmentForm() {
                   ← Back
                 </button>
                 <button
-                  type="button"
-                  onClick={handleSubmit}
+                  type="submit"
                   disabled={!canAdvance() || submitting}
                   className="font-display text-[11px] font-bold tracking-[2px] uppercase text-surface bg-accent px-10 py-[16px] transition-all duration-300 hover:shadow-[0_0_40px_var(--accent-glow)] hover:-translate-y-[2px] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
                 >
                   {submitting ? 'Sending...' : 'Get my results'}
                 </button>
               </div>
-              {submitError && (
-                <p className="mt-3 text-center font-body text-[13px] text-red-400">
-                  Couldn&apos;t deliver your results — please email{' '}
-                  <a href="mailto:jeff@tamethemachine.com" className="underline">
-                    jeff@tamethemachine.com
-                  </a>.
-                </p>
-              )}
+              </form>
             </motion.div>
           )}
 

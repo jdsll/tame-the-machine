@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   // Honeypot — silent success, no side effects
   if (_hp) {
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, emailOk: true })
   }
 
   // Rate limit
@@ -144,5 +144,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'delivery_failed' })
   }
 
-  return NextResponse.json({ ok: true })
+  // emailOk lets the client show an honest "we emailed you" (or not) message
+  return NextResponse.json({ ok: true, emailOk })
 }

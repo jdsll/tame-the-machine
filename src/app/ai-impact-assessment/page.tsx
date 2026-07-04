@@ -5,7 +5,6 @@ export const metadata: Metadata = {
   title: 'AI Impact Assessment',
   description:
     'Find out how much time AI could recover for your business — eight questions, about three minutes.',
-  robots: { index: false, follow: false },
 }
 
 export default function AIImpactAssessmentPage() {

@@ -7,6 +7,7 @@ import {
   segmentIntros,
   gapBlocks,
   gapShortLabels,
+  revenueCalloutCopy,
   ctaBlocks,
   highMaturityReframe,
 } from '@/lib/assessment/content'
@@ -27,6 +28,15 @@ const TEAM_LABELS: Record<string, string> = {
   E: 'a 20+ person team',
 }
 
+// "an AI Explorer" / "a Systems Scaler" / "Automation Ready" (adjective, no article)
+const SEGMENT_ARTICLES: Record<string, string> = {
+  'AI Explorer':        'an',
+  'Foundation Builder': 'a',
+  'Workflow Builder':   'a',
+  'Automation Ready':   '',
+  'Systems Scaler':     'a',
+}
+
 export type AssessmentResultEmailProps = {
   result: AssessmentResult
   firstName: string
@@ -37,13 +47,17 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
   const { segment, hours, revenueCallouts, tags, emailVariant, ctaVariant } = result
   const segSlug = SEGMENT_SLUGS[segment] ?? 'ai_explorer'
   const isSolo = q8 === 'A'
-  const topGaps = tags.gaps.slice(0, 3)
+  // low_ai_confidence gets its own reassurance block; hour-gaps fill the top 3.
+  const hasLowAiConfidence = tags.gaps.includes('low_ai_confidence')
+  const topGaps = tags.gaps.filter(t => t !== 'low_ai_confidence').slice(0, 3)
+  const lowConfidenceBlock = gapBlocks['low_ai_confidence']
   const cta = ctaBlocks[ctaVariant]
   const teamLabel = TEAM_LABELS[q8] ?? 'your team'
   const greeting = firstName ? `Hi ${firstName},` : 'Hi,'
+  const article = SEGMENT_ARTICLES[segment] ? `${SEGMENT_ARTICLES[segment]} ` : ''
   const previewText = isSolo
-    ? `You're a ${segment} — ~${hours.perEmployee} hrs/week recoverable.`
-    : `You're a ${segment} — ~${hours.teamTotal} hrs/week recoverable across ${teamLabel}.`
+    ? `You're ${article}${segment} — ~${hours.perEmployee} hrs/week recoverable.`
+    : `You're ${article}${segment} — ~${hours.teamTotal} hrs/week recoverable across ${teamLabel}.`
 
   return (
     <Html lang="en">
@@ -67,7 +81,7 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
             <Section style={{ padding: '32px 32px 0' }}>
               <Text style={{ color: '#444', fontSize: '15px', margin: '0 0 8px' }}>{greeting}</Text>
               <Heading style={{ color: '#111', fontSize: '26px', fontWeight: 700, margin: '0 0 6px', lineHeight: 1.3 }}>
-                You&apos;re a{' '}
+                You&apos;re {article}
                 <span style={{ color: '#0a9e7f' }}>{segment}</span>.
               </Heading>
               <Text style={{ color: '#777', fontSize: '14px', margin: 0 }}>
@@ -76,6 +90,20 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
             </Section>
 
             <Hr style={{ borderColor: '#eee', margin: '24px 0' }} />
+
+            {/* Readiness score */}
+            <Section style={{ padding: '0 32px 16px' }}>
+              <Text style={{ color: '#999', fontSize: '10px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                Your AI readiness score
+              </Text>
+              <Text style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: '#0a9e7f', fontSize: '32px' }}>{result.normalizedScore}</strong>
+                <span style={{ color: '#999', fontSize: '15px' }}> / 100</span>
+              </Text>
+              <div style={{ backgroundColor: '#eee', borderRadius: '3px', height: '6px', overflow: 'hidden' }}>
+                <div style={{ backgroundColor: '#4af0c0', borderRadius: '3px', height: '6px', width: `${result.normalizedScore}%` }} />
+              </div>
+            </Section>
 
             {/* Hours metric */}
             <Section style={{ padding: '0 32px' }}>
@@ -104,14 +132,19 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
             {/* Revenue callouts */}
             {revenueCallouts.length > 0 && (
               <Section style={{ padding: '16px 32px 0' }}>
-                <Section style={{ backgroundColor: 'rgba(74,240,192,0.08)', border: '1px solid rgba(74,240,192,0.3)', borderRadius: '8px', padding: '18px 24px' }}>
-                  <Text style={{ color: '#222', fontSize: '15px', margin: 0, lineHeight: 1.7 }}>
-                    Plus{' '}
-                    <strong style={{ color: '#0a9e7f' }}>revenue capture opportunity</strong>
-                    {' '}in {revenueCallouts.length} area{revenueCallouts.length > 1 ? 's' : ''}:{' '}
-                    {revenueCallouts.map(tag => gapShortLabels[tag] ?? tag).join(' and ')}.
-                  </Text>
-                </Section>
+                <Text style={{ color: '#999', fontSize: '10px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                  Revenue capture
+                </Text>
+                {revenueCallouts.map(tag => (
+                  <Section key={tag} style={{ backgroundColor: 'rgba(74,240,192,0.08)', border: '1px solid rgba(74,240,192,0.3)', borderRadius: '8px', padding: '16px 22px', marginBottom: '10px' }}>
+                    <Text style={{ color: '#0a9e7f', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 6px' }}>
+                      {gapShortLabels[tag] ?? tag}
+                    </Text>
+                    <Text style={{ color: '#444', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>
+                      {revenueCalloutCopy[tag] ?? ''}
+                    </Text>
+                  </Section>
+                ))}
               </Section>
             )}
 
@@ -137,6 +170,23 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
             )}
 
             <Hr style={{ borderColor: '#eee', margin: '24px 0' }} />
+
+            {/* Low AI confidence reassurance — always shown when Q1 = "Not at all" */}
+            {hasLowAiConfidence && lowConfidenceBlock && (
+              <Section style={{ padding: '0 32px 16px' }}>
+                <Text style={{ color: '#999', fontSize: '10px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                  First, about AI itself
+                </Text>
+                <Section style={{ backgroundColor: 'rgba(74,240,192,0.08)', border: '1px solid rgba(74,240,192,0.3)', borderRadius: '8px', padding: '18px 22px' }}>
+                  <Text style={{ color: '#222', fontSize: '14px', fontWeight: 600, margin: '0 0 4px' }}>
+                    {lowConfidenceBlock.title}
+                  </Text>
+                  <Text style={{ color: '#555', fontSize: '13px', lineHeight: 1.7, margin: 0 }}>
+                    {lowConfidenceBlock.body}
+                  </Text>
+                </Section>
+              </Section>
+            )}
 
             {/* Top gaps */}
             <Section style={{ padding: '0 32px' }}>

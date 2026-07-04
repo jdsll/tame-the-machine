@@ -3,6 +3,7 @@ import {
   segmentIntros,
   gapBlocks,
   gapShortLabels,
+  revenueCalloutCopy,
   ctaBlocks,
   highMaturityReframe,
 } from '@/lib/assessment/content'
@@ -25,18 +26,25 @@ const TEAM_LABELS: Record<string, string> = {
   E: '20+',
 }
 
-// --- Sub-components ---
-
-function PlaceholderSlot({ text }: { text: string }) {
-  return (
-    <div className="border border-dashed border-[var(--border)] bg-surface-alt rounded-lg px-5 py-4">
-      <p className="font-display text-[10px] tracking-[2px] uppercase text-dim mb-2">
-        Content slot
-      </p>
-      <p className="font-body text-dim text-[13px] leading-[1.6] italic">{text}</p>
-    </div>
-  )
+// "an AI Explorer" / "a Systems Scaler" / "Automation Ready" (adjective, no article)
+const SEGMENT_ARTICLES: Record<string, string> = {
+  'AI Explorer':        'an',
+  'Foundation Builder': 'a',
+  'Workflow Builder':   'a',
+  'Automation Ready':   '',
+  'Systems Scaler':     'a',
 }
+
+// Maturity ladder, least to most AI-ready
+const SEGMENT_LADDER = [
+  'AI Explorer',
+  'Foundation Builder',
+  'Workflow Builder',
+  'Automation Ready',
+  'Systems Scaler',
+]
+
+// --- Sub-components ---
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -52,16 +60,21 @@ type Props = {
   result: AssessmentResult
   firstName: string
   q8: string
+  emailed?: boolean
 }
 
 // --- Component ---
 
-export default function ResultDisplay({ result, firstName, q8 }: Props) {
-  const { segment, hours, revenueCallouts, tags, emailVariant, ctaVariant } = result
+export default function ResultDisplay({ result, firstName, q8, emailed = true }: Props) {
+  const { segment, hours, revenueCallouts, tags, emailVariant, ctaVariant, normalizedScore } = result
+  const stageIndex = SEGMENT_LADDER.indexOf(segment)
   const segSlug = SEGMENT_SLUGS[segment] ?? 'ai_explorer'
   const isSolo = q8 === 'A'
   const teamLabel = TEAM_LABELS[q8] ?? '?'
-  const topGaps = tags.gaps.slice(0, 3)
+  // low_ai_confidence gets its own reassurance block; hour-gaps fill the top 3.
+  const hasLowAiConfidence = tags.gaps.includes('low_ai_confidence')
+  const topGaps = tags.gaps.filter(t => t !== 'low_ai_confidence').slice(0, 3)
+  const lowConfidenceBlock = gapBlocks['low_ai_confidence']
   const cta = ctaBlocks[ctaVariant]
 
   return (
@@ -74,17 +87,70 @@ export default function ResultDisplay({ result, firstName, q8 }: Props) {
             Your AI profile
           </div>
           <h2 className="font-display text-[clamp(24px,3.5vw,40px)] font-bold text-content leading-[1.2] mb-3">
-            {firstName ? `${firstName}, you're` : "You're"} a{' '}
+            {firstName ? `${firstName}, you're` : "You're"}
+            {SEGMENT_ARTICLES[segment] ? ` ${SEGMENT_ARTICLES[segment]}` : ''}{' '}
             <span className="text-accent">{segment}</span>.
           </h2>
           <p className="font-body text-muted text-[15px]">
-            Here's what we found — and where to start.
+            Here&apos;s what we found — and where to start.
           </p>
         </div>
       </div>
 
       {/* Body */}
       <div className="max-w-[640px] mx-auto px-6 py-14 space-y-12">
+
+        {/* Email delivery failed — surface it up front so results get saved */}
+        {!emailed && (
+          <div className="bg-card border border-[var(--border)] rounded-xl px-6 py-4">
+            <p className="font-body text-muted text-[14px] leading-[1.7]">
+              We couldn&apos;t email you a copy of these results — keep this page open or
+              save it, and if you&apos;d like a copy, reach out at{' '}
+              <a href="mailto:jeff@tamethemachine.com" className="text-accent underline">
+                jeff@tamethemachine.com
+              </a>.
+            </p>
+          </div>
+        )}
+
+        {/* Readiness score + maturity ladder */}
+        <div>
+          <SectionLabel>Your AI readiness score</SectionLabel>
+          <div className="bg-card border border-[var(--border)] rounded-xl p-8">
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="font-display font-bold text-accent text-[42px] leading-none">
+                {normalizedScore}
+              </span>
+              <span className="font-display text-muted text-[16px]">/ 100</span>
+            </div>
+            <div className="h-[6px] bg-card-hover rounded-full overflow-hidden mb-8">
+              <div
+                className="h-full bg-accent rounded-full"
+                style={{ width: `${normalizedScore}%` }}
+              />
+            </div>
+            <div className="flex gap-1.5">
+              {SEGMENT_LADDER.map((stage, i) => (
+                <div key={stage} className="flex-1">
+                  <div
+                    className={[
+                      'h-[4px] rounded-full mb-2',
+                      i <= stageIndex ? 'bg-accent' : 'bg-card-hover',
+                    ].join(' ')}
+                  />
+                  <p
+                    className={[
+                      'font-display text-[9px] tracking-[1px] uppercase leading-[1.4]',
+                      i === stageIndex ? 'text-accent font-bold' : 'text-dim',
+                    ].join(' ')}
+                  >
+                    {stage}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Hours metric */}
         <div>
@@ -116,38 +182,60 @@ export default function ResultDisplay({ result, firstName, q8 }: Props) {
 
         {/* Revenue callout block — conditional */}
         {revenueCallouts.length > 0 && (
-          <div className="bg-[var(--accent-dim)] border border-accent rounded-xl px-8 py-6">
-            <p className="font-body text-content text-[16px] leading-[1.8]">
-              Plus{' '}
-              <span className="font-display font-bold text-accent">
-                revenue capture opportunity
-              </span>{' '}
-              in {revenueCallouts.length} area
-              {revenueCallouts.length > 1 ? 's' : ''}:{' '}
-              {revenueCallouts
-                .map(tag => gapShortLabels[tag] ?? tag)
-                .join(' and ')}
-              .
-            </p>
+          <div>
+            <SectionLabel>Revenue capture</SectionLabel>
+            <div className="bg-[var(--accent-dim)] border border-accent rounded-xl px-8 py-6 space-y-5">
+              {revenueCallouts.map(tag => (
+                <div key={tag}>
+                  <p className="font-display text-[10px] tracking-[2px] uppercase text-accent mb-2">
+                    {gapShortLabels[tag] ?? tag}
+                  </p>
+                  <p className="font-body text-content text-[15px] leading-[1.8]">
+                    {revenueCalloutCopy[tag] ?? ''}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Segment intro */}
         <div>
           <SectionLabel>Your situation</SectionLabel>
-          <PlaceholderSlot text={segmentIntros[segSlug] ?? `[SEGMENT_INTRO: ${segSlug}]`} />
+          <p className="font-body text-muted text-[15px] leading-[1.8]">
+            {segmentIntros[segSlug] ?? ''}
+          </p>
         </div>
 
         {/* High-maturity reframe — conditional */}
         {emailVariant === 'high_maturity' && (
+          <div className="bg-[var(--accent-dim)] border border-accent rounded-xl px-8 py-6 space-y-4">
+            {highMaturityReframe.split('\n\n').map((para, i) => (
+              <p key={i} className="font-body text-content text-[15px] leading-[1.8]">
+                {para}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Low AI confidence reassurance — always shown when Q1 = "Not at all" */}
+        {hasLowAiConfidence && lowConfidenceBlock && (
           <div>
-            <PlaceholderSlot text={highMaturityReframe} />
+            <SectionLabel>First, about AI itself</SectionLabel>
+            <div className="bg-[var(--accent-dim)] border border-accent rounded-xl px-8 py-6">
+              <p className="font-display font-bold text-content text-[16px] mb-2">
+                {lowConfidenceBlock.title}
+              </p>
+              <p className="font-body text-content text-[14px] leading-[1.8]">
+                {lowConfidenceBlock.body}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Top gaps */}
         <div>
-          <SectionLabel>Here's where AI can help you first</SectionLabel>
+          <SectionLabel>Here&apos;s where AI can help you first</SectionLabel>
           <div className="space-y-4">
             {topGaps.map(tag => {
               const block = gapBlocks[tag]
@@ -160,13 +248,18 @@ export default function ResultDisplay({ result, firstName, q8 }: Props) {
                   <p className="font-display text-[11px] tracking-[2px] uppercase text-accent mb-3">
                     {shortLabel}
                   </p>
-                  <PlaceholderSlot
-                    text={
-                      block
-                        ? `${block.title} — ${block.body}`
-                        : `[GAP_BLOCK: ${tag}]`
-                    }
-                  />
+                  {block ? (
+                    <>
+                      <p className="font-display font-bold text-content text-[16px] mb-2">
+                        {block.title}
+                      </p>
+                      <p className="font-body text-muted text-[14px] leading-[1.8]">
+                        {block.body}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="font-body text-muted text-[14px]">[{tag}]</p>
+                  )}
                 </div>
               )
             })}
@@ -176,29 +269,32 @@ export default function ResultDisplay({ result, firstName, q8 }: Props) {
         {/* CTA */}
         <div className="bg-surface-alt border border-[var(--border)] rounded-xl p-8 text-center">
           <SectionLabel>Next step</SectionLabel>
-          <PlaceholderSlot
-            text={
-              cta
-                ? `${cta.headline} — ${cta.body}`
-                : `[CTA: ${ctaVariant}]`
-            }
-          />
-          <div className="mt-8">
-            <a
-              href={cta?.url ?? '#'}
-              className="inline-block font-display text-[11px] font-bold tracking-[2px] uppercase text-surface bg-accent px-10 py-[16px] no-underline transition-all duration-300 hover:shadow-[0_0_40px_var(--accent-glow)] hover:-translate-y-[2px]"
-            >
-              {cta?.buttonText ?? 'Book Your Free Audit'}
-            </a>
-          </div>
+          {cta ? (
+            <>
+              <h3 className="font-display font-bold text-content text-[20px] leading-[1.3] mb-3">
+                {cta.headline}
+              </h3>
+              <p className="font-body text-muted text-[15px] leading-[1.8] mb-8">
+                {cta.body}
+              </p>
+            </>
+          ) : null}
+          <a
+            href={cta?.url ?? '#'}
+            className="inline-block font-display text-[11px] font-bold tracking-[2px] uppercase text-surface bg-accent px-10 py-[16px] no-underline transition-all duration-300 hover:shadow-[0_0_40px_var(--accent-glow)] hover:-translate-y-[2px]"
+          >
+            {cta?.buttonText ?? 'Book Your Free Audit'}
+          </a>
         </div>
 
         {/* Email reassurance */}
-        <div className="text-center pb-4">
-          <p className="font-body text-muted text-[14px] leading-[1.7]">
-            We just emailed you these results so you have them for reference.
-          </p>
-        </div>
+        {emailed && (
+          <div className="text-center pb-4">
+            <p className="font-body text-muted text-[14px] leading-[1.7]">
+              We just emailed you these results so you have them for reference.
+            </p>
+          </div>
+        )}
 
       </div>
     </div>

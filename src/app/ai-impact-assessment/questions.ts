@@ -47,10 +47,10 @@ export const QUESTIONS: Question[] = [
     qKey: 'q4',
     text: 'What happens when a new lead or request comes in?',
     options: [
-      { id: 'A', text: 'Manual when we can' },
-      { id: 'B', text: 'Usually same day' },
-      { id: 'C', text: 'Templates / checklists' },
-      { id: 'D', text: 'Automated routing or follow-up' },
+      { id: 'A', text: 'It waits until someone gets to it' },
+      { id: 'B', text: 'Someone replies manually, usually same day' },
+      { id: 'C', text: 'We send templated replies by hand' },
+      { id: 'D', text: 'Automated routing or instant follow-up' },
     ],
   },
   {
