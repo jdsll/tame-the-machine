@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { track } from '@vercel/analytics'
 import { scoreAssessment } from '@/lib/assessment/scoring'
 import type { AssessmentAnswers, AssessmentResult } from '@/lib/assessment/scoring-data'
 import { QUESTIONS } from './questions'
@@ -177,6 +178,8 @@ export default function AssessmentForm() {
 
   const handleSingle = (qKey: string, value: string) => {
     clearAdvanceTimer()
+    // Funnel: first answer of a fresh run marks the assessment as started
+    if (qKey === 'q1' && state.q1 === null) track('assessment_started')
     setState(s => ({ ...s, [qKey]: value }))
     advanceTimer.current = setTimeout(() => {
       setState(s => ({ ...s, step: s.step + 1 }))
@@ -224,6 +227,8 @@ export default function AssessmentForm() {
     const answers = toAnswers(state)
     const scored = scoreAssessment(answers)
     setResult(scored)
+    // Funnel: completion with segment/heat only — never email or other PII
+    track('assessment_completed', { segment: scored.segment, heat: scored.heat })
 
     // The result is computed locally, so the user always gets their results —
     // delivery failures just mean no emailed copy (shown as a banner).
