@@ -67,6 +67,57 @@ export function callSummaryEmail(d: CallEmailData): { subject: string; html: str
   return { subject, html: shell(inner) }
 }
 
+export type OncallAlertData = {
+  callerName: string
+  callbackNumber: string
+  address: string
+  issue: string
+  urgency: string
+  businessName: string
+}
+
+export function oncallAlertEmail(d: OncallAlertData): { subject: string; html: string } {
+  const subject = `🚨 EMERGENCY dispatch — ${d.callerName || d.callbackNumber}${d.businessName ? ` (${d.businessName})` : ''}`
+  const inner = `
+    <h1 style="font-size:20px;margin:0 0 4px;color:#c0392b;">Emergency — on-call needed now</h1>
+    <p style="font-size:14px;color:#606070;margin:0 0 20px;">The AI receptionist flagged this call as an emergency and is telling the caller you'll reach out.</p>
+    <table style="border-collapse:collapse;width:100%;">
+      ${row('Caller', escapeHtml(d.callerName || '—'))}
+      ${row('Callback', `<a href="tel:${escapeHtml(d.callbackNumber)}" style="color:#0a0a0f;font-weight:600;">${escapeHtml(d.callbackNumber || '—')}</a>`)}
+      ${row('Address', escapeHtml(d.address || '—'))}
+      ${row('Issue', escapeHtml(d.issue || '—'))}
+      ${row('Urgency', escapeHtml(d.urgency || 'emergency'))}
+    </table>
+    <p style="font-size:13px;color:#606070;margin-top:20px;">Call the customer back as soon as you can.</p>
+  `
+  return { subject, html: shell(inner) }
+}
+
+export type BookingEmailData = {
+  callerName: string
+  callbackNumber: string
+  address: string
+  issue: string
+  preferredWindow: string
+  businessName: string
+}
+
+export function bookingRequestEmail(d: BookingEmailData): { subject: string; html: string } {
+  const subject = `[Front Desk AI] New appointment request — ${d.callerName || d.callbackNumber}`
+  const inner = `
+    <h1 style="font-size:20px;margin:0 0 4px;">New appointment request${d.businessName ? ` — ${escapeHtml(d.businessName)}` : ''}</h1>
+    <p style="font-size:14px;color:#606070;margin:0 0 20px;">Your AI receptionist booked this request. Confirm the exact slot with the customer.</p>
+    <table style="border-collapse:collapse;width:100%;">
+      ${row('Caller', escapeHtml(d.callerName || '—'))}
+      ${row('Callback', escapeHtml(d.callbackNumber || '—'))}
+      ${row('Address', escapeHtml(d.address || '—'))}
+      ${row('Issue', escapeHtml(d.issue || '—'))}
+      ${row('Preferred time', escapeHtml(d.preferredWindow || '—'))}
+    </table>
+  `
+  return { subject, html: shell(inner) }
+}
+
 export type WelcomeEmailData = {
   intakeUrl: string
   businessName?: string

@@ -4,6 +4,19 @@ import { getSheetsClient } from '@/lib/assessment/sheets'
 
 export const CLIENTS_TAB = 'FrontDeskClients'
 export const CALLS_TAB = 'FrontDeskCalls'
+export const BOOKINGS_TAB = 'FrontDeskBookings'
+
+// FrontDeskBookings columns A:H
+export const BOOKINGS_HEADER = [
+  'timestamp',
+  'business_name',
+  'phone_number_id',
+  'caller_name',
+  'caller_phone',
+  'address',
+  'issue',
+  'preferred_window',
+]
 
 // FrontDeskClients columns A:J
 export const CLIENTS_HEADER = [
@@ -56,6 +69,17 @@ export type CallRecord = {
   appointmentBooked: boolean
   summary: string
   cost: number
+}
+
+export type BookingRecord = {
+  timestamp: string
+  businessName: string
+  phoneNumberId: string
+  callerName: string
+  callerPhone: string
+  address: string
+  issue: string
+  preferredWindow: string
 }
 
 export type NewClient = {
@@ -157,6 +181,27 @@ export async function appendCall(call: CallRecord): Promise<void> {
   })
 }
 
+export async function appendBooking(booking: BookingRecord): Promise<void> {
+  const { sheets, sheetId } = getSheetsClient()
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: `${BOOKINGS_TAB}!A:H`,
+    valueInputOption: 'RAW',
+    requestBody: {
+      values: [[
+        booking.timestamp,
+        booking.businessName,
+        booking.phoneNumberId,
+        booking.callerName,
+        booking.callerPhone,
+        booking.address,
+        booking.issue,
+        booking.preferredWindow,
+      ]],
+    },
+  })
+}
+
 // Read all call rows, skipping the header.
 export async function readCalls(): Promise<CallRecord[]> {
   const { sheets, sheetId } = getSheetsClient()
@@ -197,6 +242,7 @@ export async function ensureTabs(): Promise<{ created: string[]; existing: strin
   const wanted: { title: string; header: string[] }[] = [
     { title: CLIENTS_TAB, header: CLIENTS_HEADER },
     { title: CALLS_TAB, header: CALLS_HEADER },
+    { title: BOOKINGS_TAB, header: BOOKINGS_HEADER },
   ]
 
   const created: string[] = []

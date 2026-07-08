@@ -30,6 +30,54 @@ function truthyFlag(v: unknown): boolean {
   return s === 'true' || s === 'yes' || s === '1'
 }
 
+// Extract the Vapi phone-number id from any server message, read defensively
+// (phoneNumber.id | call.phoneNumberId | message.phoneNumberId).
+export function getPhoneNumberId(message: AnyRecord): string {
+  const call = asRecord(message.call)
+  const phoneNumber = asRecord(message.phoneNumber)
+  return firstString(phoneNumber.id, call.phoneNumberId, message.phoneNumberId)
+}
+
+export type ToolInvocation = { id: string; name: string; args: AnyRecord }
+
+// Parse the tool calls out of a "tool-calls" server message. Vapi has shipped
+// several shapes (toolCallList, toolCalls, toolWithToolCallList); handle all.
+export function parseToolCalls(message: AnyRecord): ToolInvocation[] {
+  const candidates: unknown[] = []
+  if (Array.isArray(message.toolCallList)) candidates.push(...message.toolCallList)
+  else if (Array.isArray(message.toolCalls)) candidates.push(...message.toolCalls)
+  else if (Array.isArray(message.toolWithToolCallList)) {
+    for (const entry of message.toolWithToolCallList) {
+      const tc = asRecord(entry).toolCall
+      if (tc) candidates.push(tc)
+    }
+  }
+
+  const out: ToolInvocation[] = []
+  for (const raw of candidates) {
+    const item = asRecord(raw)
+    const fn = asRecord(item.function)
+    const id = firstString(item.id, item.toolCallId, fn.id)
+    const name = firstString(item.name, fn.name)
+    if (!id || !name) continue
+    out.push({ id, name, args: parseArgs(item.arguments ?? fn.arguments ?? item.parameters) })
+  }
+  return out
+}
+
+function parseArgs(raw: unknown): AnyRecord {
+  if (raw && typeof raw === 'object') return raw as AnyRecord
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw)
+      return parsed && typeof parsed === 'object' ? (parsed as AnyRecord) : {}
+    } catch {
+      return {}
+    }
+  }
+  return {}
+}
+
 export type ParsedCall = {
   phoneNumberId: string
   callerNumber: string
@@ -47,14 +95,13 @@ export type ParsedCall = {
 // message is the `message` object from the Vapi webhook body.
 export function parseEndOfCallReport(message: AnyRecord): ParsedCall {
   const call = asRecord(message.call)
-  const phoneNumber = asRecord(message.phoneNumber)
   const customer = asRecord(message.customer)
   const callCustomer = asRecord(call.customer)
   const analysis = asRecord(message.analysis)
   const structured = asRecord(analysis.structuredData)
   const artifact = asRecord(message.artifact)
 
-  const phoneNumberId = firstString(phoneNumber.id, call.phoneNumberId, message.phoneNumberId)
+  const phoneNumberId = getPhoneNumberId(message)
 
   const callerNumber =
     firstString(customer.number, callCustomer.number, message.customerNumber) || 'Unknown'
