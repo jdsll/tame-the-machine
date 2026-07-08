@@ -84,6 +84,7 @@ export function parseEndOfCallReport(message: AnyRecord): ParsedCall {
 
   const isEmergency =
     truthyFlag(structured.isEmergency) ||
+    truthyFlag(structured.is_emergency) ||
     truthyFlag(structured.emergency) ||
     urgency.toLowerCase() === 'emergency' ||
     urgency.toLowerCase() === 'urgent'
