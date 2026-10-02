@@ -1,4 +1,4 @@
-import type { AssessmentResult } from '@/lib/assessment/scoring-data'
+import { GAP_TAG_META, type AssessmentResult, type HourGapTag } from '@/lib/assessment/scoring-data'
 import {
   segmentIntros,
   gapBlocks,
@@ -6,6 +6,9 @@ import {
   revenueCalloutCopy,
   ctaBlocks,
   highMaturityReframe,
+  firstMoves,
+  auditBridge,
+  auditValueLine,
 } from '@/lib/assessment/content'
 
 // --- Constants ---
@@ -233,36 +236,67 @@ export default function ResultDisplay({ result, firstName, q8, emailed = true }:
           </div>
         )}
 
-        {/* Top gaps */}
+        {/* Your first three moves — top gaps as a prioritized plan */}
         <div>
-          <SectionLabel>Here&apos;s where AI can help you first</SectionLabel>
+          <SectionLabel>Your first three moves</SectionLabel>
           <div className="space-y-4">
-            {topGaps.map(tag => {
+            {topGaps.map((tag, i) => {
               const block = gapBlocks[tag]
+              const move = firstMoves[tag]
               const shortLabel = gapShortLabels[tag] ?? tag
+              const hrs = GAP_TAG_META[tag as HourGapTag]?.hrsPerWeek
               return (
                 <div
                   key={tag}
                   className="bg-card border border-[var(--border)] rounded-xl p-6"
                 >
-                  <p className="font-display text-[11px] tracking-[2px] uppercase text-accent mb-3">
-                    {shortLabel}
+                  <div className="flex items-center gap-3 mb-4 flex-wrap">
+                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent text-surface font-display text-[13px] font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <p className="font-display text-[11px] tracking-[2px] uppercase text-accent">
+                      {shortLabel}
+                    </p>
+                    <span className="ml-auto flex gap-2">
+                      {hrs !== undefined && (
+                        <span className="font-display text-[10px] tracking-[1px] uppercase text-content bg-card-hover border border-[var(--border)] rounded-full px-3 py-[4px]">
+                          ~{hrs} hrs/wk
+                        </span>
+                      )}
+                      {move && (
+                        <span className="font-display text-[10px] tracking-[1px] uppercase text-muted border border-[var(--border)] rounded-full px-3 py-[4px]">
+                          {move.effort}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="font-display font-bold text-content text-[16px] mb-2">
+                    {move?.title ?? block?.title ?? shortLabel}
                   </p>
-                  {block ? (
-                    <>
-                      <p className="font-display font-bold text-content text-[16px] mb-2">
-                        {block.title}
-                      </p>
-                      <p className="font-body text-muted text-[14px] leading-[1.8]">
-                        {block.body}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="font-body text-muted text-[14px]">[{tag}]</p>
+                  {block && (
+                    <p className="font-body text-muted text-[14px] leading-[1.8]">
+                      {block.body}
+                    </p>
+                  )}
+                  {move && (
+                    <p className="font-body text-content text-[14px] leading-[1.8] mt-3 border-t border-[var(--border)] pt-3">
+                      <span className="font-display text-[11px] tracking-[2px] uppercase text-accent">
+                        First step:
+                      </span>{' '}
+                      {move.firstStep}
+                    </p>
                   )}
                 </div>
               )
             })}
+          </div>
+
+          {/* Bridge to the audit */}
+          <div className="mt-8 border-l-[3px] border-accent pl-6">
+            <p className="font-body text-content text-[15px] leading-[1.8]">{auditBridge}</p>
+            <p className="font-display text-[12px] tracking-[1px] uppercase text-accent mt-3">
+              {auditValueLine}
+            </p>
           </div>
         </div>
 

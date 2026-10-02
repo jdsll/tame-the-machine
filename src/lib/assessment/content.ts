@@ -52,6 +52,71 @@ export const gapBlocks: Record<string, { title: string; body: string }> = {
   },
 }
 
+// "Your first three moves" — the top-3 gaps rendered as a prioritized action plan.
+// title: imperative move name. firstStep: the concrete do-this-week action.
+// effort: honest sizing so the free plan reads as real advice, not teaser copy.
+export const firstMoves: Record<string, { title: string; firstStep: string; effort: 'DIY afternoon' | 'Small build' }> = {
+  admin_overload: {
+    title: 'Put an AI assistant in front of your inbox',
+    firstStep: 'Pick the one email you rewrite most and template it with AI filling in the details — that single template usually buys back an hour a week on its own.',
+    effort: 'Small build',
+  },
+  lead_response_gap: {
+    title: 'Answer every lead in under five minutes',
+    firstStep: 'Set up missed-call text-back: when you can’t answer, the caller instantly gets a text that answers their question and offers a booking link.',
+    effort: 'Small build',
+  },
+  followup_gap: {
+    title: 'Make follow-up impossible to forget',
+    firstStep: 'Write touches 2, 3, and 4 once, and let automation send them until the lead replies — most deals close on the third touch or later.',
+    effort: 'Small build',
+  },
+  content_bottleneck: {
+    title: 'Turn one idea into a week of content',
+    firstStep: 'Record yourself talking about one client problem for five minutes; let AI turn it into a post, three shorts, and an email.',
+    effort: 'DIY afternoon',
+  },
+  delivery_bottleneck: {
+    title: 'Automate the wrapper around your real work',
+    firstStep: 'Let status updates, “we’re on schedule” notes, and project recaps draft themselves from your project tool — clients feel more informed, you type less.',
+    effort: 'Small build',
+  },
+  data_fragmented: {
+    title: 'Connect the two tools you copy between most',
+    firstStep: 'One connection, one direction — the first time a record shows up where it belongs without you touching it, you’ll see where the hours went.',
+    effort: 'Small build',
+  },
+  reporting_overhead: {
+    title: 'Automate one report end to end',
+    firstStep: 'The weekly numbers you assemble by hand can pull themselves and arrive as a written summary — same data, zero assembly.',
+    effort: 'Small build',
+  },
+  tool_sprawl: {
+    title: 'Stop being the glue between your tools',
+    firstStep: 'List the three copy-paste jobs you do between tools every week and automate the most annoying one — you keep the stack, you stop being the integration.',
+    effort: 'Small build',
+  },
+  no_sops: {
+    title: 'Get your processes out of your head',
+    firstStep: 'Next recurring task: record your screen and narrate it; AI turns the recording into a clean step-by-step SOP in minutes.',
+    effort: 'DIY afternoon',
+  },
+  low_ai_confidence: {
+    title: 'Get one small win on the board',
+    firstStep: 'Pick one task you do every week and let AI take the first pass — a draft, not a final. You review, fix, send.',
+    effort: 'DIY afternoon',
+  },
+}
+
+// The bridge from the free plan to the audit, rendered after move 3.
+export const auditBridge =
+  'That’s the 20-minute version — real moves, in the right order. The audit is the 90-minute version: we map all three engines of your business — acquisition, delivery, support — and you get every opportunity priced in hours and dollars, sequenced, in a one-page report within 48 hours.'
+
+// Value anchor for the free audit. PLACEHOLDER price — Jeff to confirm before deploy.
+// At flip time this becomes the paid line ("$500, credited in full toward your build").
+export const auditValueLine =
+  'Normally $500 — free while I take on founding clients.'
+
 // Short labels used in the revenue callout sentence on the result page and in emails.
 // "Plus revenue capture opportunity in 2 areas: lead response and follow-up."
 export const gapShortLabels: Record<string, string> = {

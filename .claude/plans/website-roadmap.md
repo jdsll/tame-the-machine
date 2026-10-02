@@ -11,36 +11,38 @@ homepage → AI Impact Assessment → audit call → build._
 - Three homepage redesign candidates at `/preview/v1..v3` (uncommitted, awaiting Jeff's pick)
   - ICP: $1M–$5M owner-led service businesses; revenue-first messaging; "Upgrade Plan" framing
 
-## Phase 1 — Analytics (now)
+## Phase 1 — Analytics ✅ (shipped 4bb0499, 2026-07-07)
 
-Vercel Web Analytics + custom funnel events, so the redesign and everything after
-it is judged on data, not taste.
-
-- [ ] `@vercel/analytics` in root layout
-- [ ] Funnel events: `assessment_started`, `assessment_completed` (segment + heat as
-      props — never email/PII)
-- [ ] Jeff: enable Web Analytics on the project in the Vercel dashboard
+- [x] `@vercel/analytics` in root layout
+- [x] Funnel events: `assessment_started`, `assessment_completed` (segment + heat, no PII)
+- [x] Jeff enabled Web Analytics in the Vercel dashboard
 - Later, after homepage cutover: CTA click events to compare hero vs final-CTA conversion
 
-## Phase 2 — Email nurture sequence (this week)
+## Phase 2 — Email nurture sequence ✅ shipped (2026-10-02)
 
-The biggest gap: scored, segmented leads currently get exactly one email.
+- [x] Sequence: day 0 results (existed) → day 2 quick win by top gap → day 6 own-work
+      proof → day 10 invite (direct for HOT/WARM, soft close for COLD)
+- [x] Infra: daily Vercel Cron (16:00 UTC) → `/api/nurture-cron` (CRON_SECRET auth,
+      `?dryRun=1` mode) reads the Sheet, sends via Resend, stamps columns N/O/P.
+      Leads >21 days old never-nurtured are marked `skipped:stale`; mid-sequence leads
+      stop after 30 days. Max 50 sends/run.
+- [x] Unsubscribe: HMAC-tokenized `/unsubscribe` confirm page + POST-only API (column Q),
+      List-Unsubscribe one-click headers, link added to results email too
+- [x] Sends from `Jeff Restel <jeff@send.tamethemachine.com>` (verified Resend domain),
+      replies to jeff@tamethemachine.com
+- [x] Unit tests on due-logic + tokens; verified live end-to-end locally
+- [x] Jeff approved copy 2026-10-02 after a de-AI pass (no em-dashes, no invented stats)
+- [x] `CRON_SECRET` + `UNSUBSCRIBE_SECRET` set in Vercel env
 
-- 4-email sequence, personalized by segment/gaps/heat from the assessment:
-  1. Day 0 — results recap (exists)
-  2. Day 2–3 — the one quick win for their top gap
-  3. Day 6–7 — relevant case study / own-work proof
-  4. Day 10–12 — soft audit invite (HOT/WARM leads get a more direct version)
-- Infra: Vercel Cron route (daily) reads the leads Sheet, sends due emails via Resend,
-  marks sent-state back to the Sheet. No new database needed.
-- Needs from Jeff: copy approval per email; unsubscribe link decision (do it here —
-  replaces "reply to opt out")
+## Phase 3 — Homepage cutover ✅ shipped (2026-10-02)
 
-## Phase 3 — Homepage cutover
-
-- Jeff picks V1/V2/V3 (or a mix); promote to `/`, rewire nav + footer CTAs to the
-  assessment, delete the Google Form dependency, drop preview routes
-- Replace placeholder proof/case/pricing/capacity numbers with real ones first
+- [x] Jeff picked the letter layout (V4) on 2026-09-15; promoted to `/`, copy seam in
+      `src/lib/home-content.ts`
+- [x] Nav + footer CTAs point to the assessment; Google Form link removed; preview
+      routes deleted
+- [ ] "What a build looks like" section parked in `home-content.ts` until real case
+      studies ship
+- [x] $500 audit anchor confirmed by Jeff 2026-10-02 (`auditValueLine` in content.ts)
 
 ## Phase 4 — /audit page
 
@@ -57,6 +59,22 @@ The biggest gap: scored, segmented leads currently get exactly one email.
 
 - One page per shipped client build, one hard number each
 - Post-build automation that asks the client for a quote/result while it's fresh
+
+## Audit monetization (decided 2026-07-08)
+
+- **Model:** paid audit, **100% credited toward the build** if the lead proceeds.
+  Target price ~$500 (PLACEHOLDER — Jeff confirms; `auditValueLine` in
+  `src/lib/assessment/content.ts` is the single copy seam).
+- **Now:** audit stays free but is value-anchored everywhere — "Normally $500 — free
+  while I take on founding clients" (results page, results email, stage-3 HOT nurture).
+- **Flip trigger:** 2–3 real case studies / testimonials from completed builds.
+- **At flip time:** change `auditValueLine` to the paid line ("$500, credited in full
+  toward your build"), add a Stripe Payment Link on the /audit page (Phase 4), update
+  stage-3 nurture, and add the same anchor to whichever homepage variant shipped
+  (offer cards in `src/components/preview/shared.ts` if pre-cutover).
+- **Rationale:** free assessment gives the prioritized "first three moves" plan (the
+  20-minute version); the audit is positioned as the 90-minute Three Engines version —
+  free value earns the authority, the anchor sets the price expectation before the flip.
 
 ## Explicitly not doing (for now)
 

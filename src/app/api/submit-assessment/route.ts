@@ -7,6 +7,7 @@ import type { AssessmentAnswers, AssessmentResult } from '@/lib/assessment/scori
 import { emailSubjects } from '@/lib/assessment/content'
 import { appendRow } from '@/lib/assessment/sheets'
 import { checkRateLimit } from '@/lib/assessment/rate-limit'
+import { unsubscribeUrl } from '@/lib/assessment/nurture'
 import AssessmentResultEmail from '@emails/AssessmentResult'
 import HotLeadAlert from '@emails/HotLeadAlert'
 
@@ -93,7 +94,12 @@ export async function POST(req: NextRequest) {
   // Send result email
   try {
     const html = await render(
-      React.createElement(AssessmentResultEmail, { result, firstName, q8: answers.q8 }),
+      React.createElement(AssessmentResultEmail, {
+        result,
+        firstName,
+        q8: answers.q8,
+        unsubscribeHref: unsubscribeUrl(email),
+      }),
     )
     const { error: sendError } = await resend.emails.send({ from, to: email.trim(), subject, html })
     if (sendError) {

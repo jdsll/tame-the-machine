@@ -3,6 +3,7 @@ import {
 } from '@react-email/components'
 import { Tailwind } from '@react-email/components'
 import type { AssessmentResult } from '@/lib/assessment/scoring-data'
+import { GAP_TAG_META, type HourGapTag } from '@/lib/assessment/scoring-data'
 import {
   segmentIntros,
   gapBlocks,
@@ -10,6 +11,9 @@ import {
   revenueCalloutCopy,
   ctaBlocks,
   highMaturityReframe,
+  firstMoves,
+  auditBridge,
+  auditValueLine,
 } from '@/lib/assessment/content'
 
 const SEGMENT_SLUGS: Record<string, string> = {
@@ -41,9 +45,10 @@ export type AssessmentResultEmailProps = {
   result: AssessmentResult
   firstName: string
   q8: string
+  unsubscribeHref?: string
 }
 
-export default function AssessmentResultEmail({ result, firstName, q8 }: AssessmentResultEmailProps) {
+export default function AssessmentResultEmail({ result, firstName, q8, unsubscribeHref }: AssessmentResultEmailProps) {
   const { segment, hours, revenueCallouts, tags, emailVariant, ctaVariant } = result
   const segSlug = SEGMENT_SLUGS[segment] ?? 'ai_explorer'
   const isSolo = q8 === 'A'
@@ -188,28 +193,49 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
               </Section>
             )}
 
-            {/* Top gaps */}
+            {/* Your first three moves */}
             <Section style={{ padding: '0 32px' }}>
               <Text style={{ color: '#999', fontSize: '10px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 16px' }}>
-                Where AI can help you first
+                Your first three moves
               </Text>
-              {topGaps.map(tag => {
+              {topGaps.map((tag, i) => {
                 const block = gapBlocks[tag]
+                const move = firstMoves[tag]
                 const shortLabel = gapShortLabels[tag] ?? tag
+                const hrs = GAP_TAG_META[tag as HourGapTag]?.hrsPerWeek
+                const chips = [
+                  hrs !== undefined ? `~${hrs} hrs/wk` : null,
+                  move?.effort ?? null,
+                ].filter(Boolean).join(' · ')
                 return (
                   <Section key={tag} style={{ backgroundColor: '#f8f8f8', borderRadius: '8px', padding: '18px 22px', marginBottom: '12px' }}>
                     <Text style={{ color: '#0a9e7f', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 6px' }}>
-                      {shortLabel}
+                      {i + 1}. {shortLabel}{chips ? ` — ${chips}` : ''}
                     </Text>
                     <Text style={{ color: '#222', fontSize: '14px', fontWeight: 600, margin: '0 0 4px' }}>
-                      {block?.title ?? `[GAP: ${tag}]`}
+                      {move?.title ?? block?.title ?? `[GAP: ${tag}]`}
                     </Text>
                     <Text style={{ color: '#666', fontSize: '13px', lineHeight: 1.7, margin: 0 }}>
                       {block?.body ?? ''}
                     </Text>
+                    {move && (
+                      <Text style={{ color: '#222', fontSize: '13px', lineHeight: 1.7, margin: '10px 0 0', borderTop: '1px solid #e5e5e5', paddingTop: '10px' }}>
+                        <strong style={{ color: '#0a9e7f', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>First step:</strong>{' '}
+                        {move.firstStep}
+                      </Text>
+                    )}
                   </Section>
                 )
               })}
+              {/* Bridge to the audit */}
+              <Section style={{ borderLeft: '3px solid #4af0c0', padding: '4px 0 4px 18px', margin: '20px 0 0' }}>
+                <Text style={{ color: '#333', fontSize: '14px', lineHeight: 1.7, margin: '0 0 8px' }}>
+                  {auditBridge}
+                </Text>
+                <Text style={{ color: '#0a9e7f', fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
+                  {auditValueLine}
+                </Text>
+              </Section>
             </Section>
 
             <Hr style={{ borderColor: '#eee', margin: '24px 0' }} />
@@ -251,7 +277,13 @@ export default function AssessmentResultEmail({ result, firstName, q8 }: Assessm
               <Text style={{ color: '#bbb', fontSize: '12px', lineHeight: 1.7, margin: 0 }}>
                 Tame the Machine &mdash; tamethemachine.com
                 <br />
-                Reply to this email to opt out of future messages.
+                {unsubscribeHref ? (
+                  <a href={unsubscribeHref} style={{ color: '#bbb', textDecoration: 'underline' }}>
+                    Unsubscribe from future emails
+                  </a>
+                ) : (
+                  'Reply to this email to opt out of future messages.'
+                )}
               </Text>
             </Section>
 
