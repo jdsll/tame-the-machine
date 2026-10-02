@@ -12,6 +12,7 @@ export type GapTag =
   | 'no_sops' | 'low_ai_confidence'
 export type HourGapTag = Exclude<GapTag, 'low_ai_confidence'>
 export type IntentTag = 'ready_to_implement'
+export type BudgetBand = 'unsure' | 'under_2500' | '2500_5000' | '5000_10000' | '10000_plus'
 
 export type AssessmentAnswers = {
   q1: 'A' | 'B' | 'C' | 'D'
@@ -22,6 +23,8 @@ export type AssessmentAnswers = {
   q6: { id: 'A' | 'B' | 'C' | 'D' | 'E'; rank: 1 | 2 }[]
   q7: 'A' | 'B' | 'C' | 'D'
   q8: 'A' | 'B' | 'C' | 'D' | 'E'
+  // Optional so submissions from a cached pre-q9 page still score
+  q9?: 'A' | 'B' | 'C' | 'D' | 'E'
 }
 
 export type AssessmentResult = {
@@ -45,6 +48,7 @@ export type AssessmentResult = {
   revenueCallouts: string[]
   emailVariant: EmailVariant
   ctaVariant: CtaVariant
+  budgetBand: BudgetBand
 }
 
 // ── Q1: How often are you using AI tools today? ──────────────────────────────
@@ -158,6 +162,26 @@ export const Q8_ANSWERS: Record<'A' | 'B' | 'C' | 'D' | 'E', Q8AnswerData> = {
   C: { scoreContribution: 6,  multiplier: 4.0,  midpoint: 8,   leadValueTier: 'MID'       },
   D: { scoreContribution: 8,  multiplier: 7.0,  midpoint: 15,  leadValueTier: 'LARGE'     },
   E: { scoreContribution: 10, multiplier: 10.0, midpoint: 30,  leadValueTier: 'LARGE'     },
+}
+
+// ── Q9: First-project budget (added 2026-10-02) ──────────────────────────────
+// Qualification only: it never touches the readiness score, segment, or hours.
+// One heat rule: an under-$2,500 budget can't produce a HOT alert (caps at WARM).
+
+export const Q9_BUDGET: Record<'A' | 'B' | 'C' | 'D' | 'E', BudgetBand> = {
+  A: 'unsure',
+  B: 'under_2500',
+  C: '2500_5000',
+  D: '5000_10000',
+  E: '10000_plus',
+}
+
+export const BUDGET_LABELS: Record<BudgetBand, string> = {
+  unsure: 'Not sure yet',
+  under_2500: 'Under $2,500',
+  '2500_5000': '$2,500 to $5,000',
+  '5000_10000': '$5,000 to $10,000',
+  '10000_plus': '$10,000+',
 }
 
 // ── Gap tag metadata (spec §4) ────────────────────────────────────────────────

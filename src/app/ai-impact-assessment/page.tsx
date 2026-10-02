@@ -4,7 +4,7 @@ import AssessmentForm from './assessment-form'
 export const metadata: Metadata = {
   title: 'AI Impact Assessment',
   description:
-    'Find out how much time AI could recover for your business — eight questions, about three minutes.',
+    'Find out how much time AI could recover for your business — nine questions, about three minutes.',
 }
 
 export default function AIImpactAssessmentPage() {
@@ -19,7 +19,7 @@ export default function AIImpactAssessmentPage() {
             AI Impact Assessment
           </h1>
           <p className="font-body text-muted text-[16px] leading-[1.7] max-w-[520px]">
-            Eight questions. About three minutes. Walk away knowing exactly where AI can
+            Nine questions. About three minutes. Walk away knowing exactly where AI can
             recover time — and revenue — for your business.
           </p>
         </div>

@@ -20,7 +20,7 @@ export const OFFER_STEPS = [
     label: 'Start here',
     name: 'AI Impact Assessment',
     price: 'Free · 3 minutes',
-    desc: 'Eight questions about how your business runs. You get a readiness score, an estimate of the hours you could recover, and a prioritized plan of your first three moves — in your inbox before you close the tab.',
+    desc: 'Nine questions about how your business runs. You get a readiness score, an estimate of the hours you could recover, and a prioritized plan of your first three moves — in your inbox before you close the tab.',
   },
   {
     label: 'Then',

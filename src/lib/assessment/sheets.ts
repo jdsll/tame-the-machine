@@ -1,11 +1,11 @@
 import { google, type sheets_v4 } from 'googleapis'
-import type { AssessmentAnswers, AssessmentResult } from './scoring-data'
+import { BUDGET_LABELS, type AssessmentAnswers, type AssessmentResult } from './scoring-data'
 
 // Sheet1 column map (A:Q)
 // A submittedAt | B email | C firstName | D segment | E heat | F leadValueTier
 // G top3Gaps | H hrsPerEmployee | I hrsTeamTotal | J revenueCallouts | K q6TopOutcome
 // L emailVariant | M answersJson | N nurture1SentAt | O nurture2SentAt
-// P nurture3SentAt | Q unsubscribedAt
+// P nurture3SentAt | Q unsubscribedAt | R budget
 
 export type SheetSubmission = {
   answers: AssessmentAnswers
@@ -73,7 +73,7 @@ export async function appendRow(sub: SheetSubmission): Promise<void> {
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: 'Sheet1!A:Q',
+      range: 'Sheet1!A:R',
       valueInputOption: 'RAW',
       requestBody: {
         values: [[
@@ -94,6 +94,7 @@ export async function appendRow(sub: SheetSubmission): Promise<void> {
           '', // O nurture2SentAt
           '', // P nurture3SentAt
           '', // Q unsubscribedAt
+          BUDGET_LABELS[sub.result.budgetBand], // R budget
         ]],
       },
     })

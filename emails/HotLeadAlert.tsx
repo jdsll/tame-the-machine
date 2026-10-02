@@ -2,7 +2,7 @@ import {
   Html, Head, Preview, Body, Container, Section, Heading, Text, Hr,
 } from '@react-email/components'
 import { Tailwind } from '@react-email/components'
-import type { AssessmentAnswers, AssessmentResult } from '@/lib/assessment/scoring-data'
+import { BUDGET_LABELS, type AssessmentAnswers, type AssessmentResult } from '@/lib/assessment/scoring-data'
 
 export type HotLeadAlertProps = {
   result: AssessmentResult
@@ -52,6 +52,7 @@ export default function HotLeadAlert({ result, firstName, email, answers }: HotL
               <Row label="Segment" value={result.segment} />
               <Row label="Heat" value={result.heat} highlight />
               <Row label="Lead Value Tier" value={result.leadValueTier} />
+              <Row label="Budget" value={BUDGET_LABELS[result.budgetBand]} highlight />
               <Row label="Email Variant" value={result.emailVariant} />
               <Row label="CTA Variant" value={`${result.ctaVariant} (Q6 top: ${q6TopOutcome})`} />
             </Section>

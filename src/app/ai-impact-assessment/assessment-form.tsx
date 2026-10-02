@@ -23,6 +23,7 @@ type FormState = {
   q6: MultiRankState
   q7: string | null
   q8: string | null
+  q9: string | null
   firstName: string
   email: string
   hp: string
@@ -43,14 +44,20 @@ const DEFAULT_STATE: FormState = {
   q6: { ...EMPTY_MULTI },
   q7: null,
   q8: null,
+  q9: null,
   firstName: '',
   email: '',
   hp: '',
   emailDelivered: true,
 }
 
-// v2: MultiRankState dropped rank1 (rank is now selection order)
-const STORAGE_KEY = 'aia:form:v2'
+// v3: added q9 (budget), which shifted the email and results step numbers
+const STORAGE_KEY = 'aia:form:v3'
+
+// Steps 0..QUESTION_COUNT-1 are questions, then the email step, then results.
+const QUESTION_COUNT = QUESTIONS.length
+const EMAIL_STEP = QUESTION_COUNT
+const RESULT_STEP = QUESTION_COUNT + 1
 
 // --- Helpers ---
 
@@ -86,6 +93,7 @@ function toAnswers(s: FormState): AssessmentAnswers {
     q6: buildMulti(s.q6),
     q7: s.q7 as 'A' | 'B' | 'C' | 'D',
     q8: s.q8 as 'A' | 'B' | 'C' | 'D' | 'E',
+    q9: s.q9 as 'A' | 'B' | 'C' | 'D' | 'E',
   }
 }
 
@@ -146,7 +154,7 @@ export default function AssessmentForm() {
     const stored = hydrateFromStorage()
     // Landing on the results step after a refresh: recompute the result from
     // the stored answers so the page doesn't strand on the loading fallback.
-    if (stored.step === 9) {
+    if (stored.step === RESULT_STEP) {
       try {
         setResult(scoreAssessment(toAnswers(stored)))
       } catch {
@@ -165,7 +173,7 @@ export default function AssessmentForm() {
   }, [state, hydrated])
 
   const { step } = state
-  const question = step <= 7 ? QUESTIONS[step] : null
+  const question = step < QUESTION_COUNT ? QUESTIONS[step] : null
 
   // --- Handlers ---
 
@@ -202,7 +210,7 @@ export default function AssessmentForm() {
   }
 
   const canAdvance = (): boolean => {
-    if (step === 8) return validateEmail(state.email)
+    if (step === EMAIL_STEP) return validateEmail(state.email)
     // Multi-rank: at least 1 selection; rank comes from selection order.
     if (step === 1) return state.q2.selected.length >= 1
     if (step === 5) return state.q6.selected.length >= 1
@@ -228,7 +236,7 @@ export default function AssessmentForm() {
     const scored = scoreAssessment(answers)
     setResult(scored)
     // Funnel: completion with segment/heat only — never email or other PII
-    track('assessment_completed', { segment: scored.segment, heat: scored.heat })
+    track('assessment_completed', { segment: scored.segment, heat: scored.heat, budget: scored.budgetBand })
 
     // The result is computed locally, so the user always gets their results —
     // delivery failures just mean no emailed copy (shown as a banner).
@@ -253,13 +261,13 @@ export default function AssessmentForm() {
     } finally {
       setSubmitting(false)
     }
-    setState(s => ({ ...s, step: 9, emailDelivered }))
+    setState(s => ({ ...s, step: RESULT_STEP, emailDelivered }))
   }
 
   // --- Render ---
 
-  // Step 9: result display — renders outside the form section
-  if (step === 9) {
+  // Result display renders outside the form section
+  if (step === RESULT_STEP) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -285,21 +293,21 @@ export default function AssessmentForm() {
       <div className="max-w-[640px] mx-auto px-6">
 
         {/* Progress indicator */}
-        {step <= 7 && (
+        {step < QUESTION_COUNT && (
           <div className="flex items-center justify-between mb-8">
             <span className="font-display text-[11px] tracking-[3px] uppercase text-muted">
-              Question {step + 1} of 8
+              Question {step + 1} of {QUESTION_COUNT}
             </span>
             <div className="h-[2px] w-32 bg-card-hover rounded-full overflow-hidden">
               <div
                 className="h-full bg-accent rounded-full transition-all duration-300"
-                style={{ width: `${((step + 1) / 8) * 100}%` }}
+                style={{ width: `${((step + 1) / QUESTION_COUNT) * 100}%` }}
               />
             </div>
           </div>
         )}
 
-        {step === 8 && (
+        {step === EMAIL_STEP && (
           <div className="mb-8">
             <span className="font-display text-[11px] tracking-[3px] uppercase text-accent">
               Almost done
@@ -309,8 +317,8 @@ export default function AssessmentForm() {
 
         <AnimatePresence mode="wait">
 
-          {/* Q steps (0-7) */}
-          {step <= 7 && question && (
+          {/* Question steps */}
+          {step < QUESTION_COUNT && question && (
             <motion.div
               key={step}
               initial={{ opacity: 0, x: 24 }}
@@ -425,8 +433,8 @@ export default function AssessmentForm() {
             </motion.div>
           )}
 
-          {/* Email / name step (step 8) */}
-          {step === 8 && (
+          {/* Email / name step */}
+          {step === EMAIL_STEP && (
             <motion.div
               key="email"
               initial={{ opacity: 0, x: 24 }}

@@ -557,3 +557,33 @@ describe('Layer 3 — §12 test profile integration', () => {
     expect(r.ctaVariant).toBe('quality')
   })
 })
+
+describe('Q9 budget', () => {
+  const hotBase: AssessmentAnswers = { q1:'D', q2:[{id:'D',rank:1}], q3:'D', q4:'D', q5:'D', q6:[{id:'D',rank:1}], q7:'D', q8:'E' }
+
+  it('missing q9 (cached pre-q9 page) scores as unsure', () => {
+    const r = scoreAssessment({ ...hotBase })
+    expect(r.budgetBand).toBe('unsure')
+    expect(r.heat).toBe('HOT')
+  })
+
+  it('under $2,500 caps a HOT lead at WARM', () => {
+    expect(scoreAssessment({ ...hotBase, q9: 'B' }).heat).toBe('WARM')
+  })
+
+  it('larger budgets keep HOT', () => {
+    expect(scoreAssessment({ ...hotBase, q9: 'E' }).heat).toBe('HOT')
+    expect(scoreAssessment({ ...hotBase, q9: 'A' }).heat).toBe('HOT')
+  })
+
+  it('budget never changes the readiness score', () => {
+    const a = scoreAssessment({ ...hotBase, q9: 'B' })
+    const b = scoreAssessment({ ...hotBase, q9: 'E' })
+    expect(a.normalizedScore).toBe(b.normalizedScore)
+    expect(a.segment).toBe(b.segment)
+  })
+
+  it('budget does not raise a COLD lead', () => {
+    expect(scoreAssessment({ ...hotBase, q7: 'A', q1: 'A', q4: 'A', q5: 'A', q9: 'E' }).heat).toBe('COLD')
+  })
+})

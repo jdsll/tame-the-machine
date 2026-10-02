@@ -99,4 +99,16 @@ export const QUESTIONS: Question[] = [
       { id: 'E', text: '20+ employees' },
     ],
   },
+  {
+    kind: 'single',
+    qKey: 'q9',
+    text: 'If a project clearly paid for itself, what would you invest in a first build?',
+    options: [
+      { id: 'A', text: 'Not sure yet' },
+      { id: 'B', text: 'Under $2,500' },
+      { id: 'C', text: '$2,500 to $5,000' },
+      { id: 'D', text: '$5,000 to $10,000' },
+      { id: 'E', text: '$10,000+' },
+    ],
+  },
 ]

@@ -1,6 +1,6 @@
 import {
   Q1_ANSWERS, Q2_ANSWERS, Q3_ANSWERS, Q4_ANSWERS, Q5_ANSWERS,
-  Q6_CTA_MAP, Q7_ANSWERS, Q8_ANSWERS,
+  Q6_CTA_MAP, Q7_ANSWERS, Q8_ANSWERS, Q9_BUDGET,
   GAP_TAG_META, SEGMENT_RULES, MAX_RAW_SCORE,
   type AssessmentAnswers, type AssessmentResult, type Heat, type HourGapTag, type Segment,
 } from './scoring-data'
@@ -106,6 +106,10 @@ export function scoreAssessment(answers: AssessmentAnswers): AssessmentResult {
     heat = 'COLD'
   }
 
+  // Budget (Q9): qualification only. A small budget can't trigger a HOT alert.
+  const budgetBand = answers.q9 ? Q9_BUDGET[answers.q9] : 'unsure'
+  if (heat === 'HOT' && budgetBand === 'under_2500') heat = 'WARM'
+
   // Revenue callouts — hour-contributing gaps with HIGH revenue impact
   const revenueCallouts = sortedHourGaps.filter(tag => GAP_TAG_META[tag].revenueImpact === 'HIGH')
 
@@ -128,6 +132,7 @@ export function scoreAssessment(answers: AssessmentAnswers): AssessmentResult {
     revenueCallouts,
     emailVariant,
     ctaVariant,
+    budgetBand,
   }
 }
 
