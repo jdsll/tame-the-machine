@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { AUDIT_FORM_URL } from '@/lib/site'
+import { ASSESSMENT_URL } from '@/lib/home-content'
 
 export default function Nav() {
   return (
@@ -19,14 +19,12 @@ export default function Nav() {
           >
             Blog
           </Link>
-          <a
-            href={AUDIT_FORM_URL}
+          <Link
+            href={ASSESSMENT_URL}
             className="font-display text-[11px] tracking-[2px] uppercase text-surface bg-accent px-6 py-[10px] no-underline transition-all duration-300 hover:shadow-[0_0_30px_var(--accent-glow)] hover:-translate-y-px"
-            target="_blank"
-            rel="noopener noreferrer"
           >
-            Get Your Free Audit
-          </a>
+            Take the Assessment
+          </Link>
         </div>
       </div>
     </nav>

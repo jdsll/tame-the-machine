@@ -13,6 +13,10 @@ export default function Footer() {
         </Link>
         <p className="text-[13px] text-[#606070]">
           &copy; {new Date().getFullYear()} Tame the Machine AI Agency &middot; Healdsburg, CA &middot;{' '}
+          <Link href="/ai-impact-assessment" className="text-[#9898a8] no-underline hover:text-[#4af0c0] transition-colors duration-200">
+            Assessment
+          </Link>{' '}
+          &middot;{' '}
           <Link href="/blog" className="text-[#9898a8] no-underline hover:text-[#4af0c0] transition-colors duration-200">
             Blog
           </Link>
